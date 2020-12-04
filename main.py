@@ -40,10 +40,11 @@ def show_canny(image_path: str):
     cv2.destroyAllWindows()
 
 
-def region_selection(image):
+def region_selection(image_path:str):
     """
     변환 지역 설정
     """
+    image = cv2.imread(image_path)
     mask = np.zeros_like(image)
 
     if len(image.shape) > 2:
@@ -57,57 +58,52 @@ def region_selection(image):
     top_left = [cols * 0.4, rows * 0.6]
     bottom_right = [cols * 0.9, rows * 0.95]
     top_right = [cols * 0.6, rows * 0.6]
-    vertices = np.array(
-        [[bottom_left, top_left, top_right, bottom_right]], dtype=np.int32)
+    vertices = np.array([[bottom_left, top_left, top_right, bottom_right]], dtype=np.int32)
     cv2.fillPoly(mask, vertices, ignore_mask_color)
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
 
-def get_line():  # todo
-    pass
+def get_line(image_path:str):  
+    image = cv2.imread(image_path)
+    lines_down = [] # (x1, y1)
+    lines_up = [] # (x2, y2)
+    lines = [] # (x1,y1,x2,y2)
+    rows, cols = image.shape[:2]
+    for k in range(2) :
+        for i in range(cols) : 
+            if k==0 :
+                if image[0,i] == (255,255,255) : 
+                    lines_down.append(list(0,i))
+            else :
+                if image[5,i] == (255,255,255) : 
+                    lines_up.append(list(0,i))
+    for i in len(lines_down) : 
+        lines.append(lines_down[i]+lines_up[i])
+    return lines # x좌표와 y좌표로 정의된 선분들의 리스트 
 
 
-def average_slope_intercept(lines):
-    """
-    교점과 각도를 찾는다
-    """
-    left_lines = []  # (slope, intercept)
-    left_weights = []  # (length,)
-    right_lines = []  # (slope, intercept)
-    right_weights = []  # (length,)
+def average_slope(lines):
+ 
+    left_lines = []  # (slope)
+    right_lines = []  # (slope)
 
     for line in lines:
         for x1, y1, x2, y2 in line:
             if x1 == x2:
                 continue
             slope = (y2 - y1) / (x2 - x1)
-            intercept = y1 - (slope * x1)
-            length = np.sqrt(((y2 - y1) ** 2) + ((x2 - x1) ** 2))
-            if slope < 0:
-                left_lines.append((slope, intercept))
-                left_weights.append((length))
+            if slope > 0: #기울기가 양수면 왼쪽에 위치한 선이다
+                left_lines.append(slope)
             else:
-                right_lines.append((slope, intercept))
-                right_weights.append((length))
-    left_lane = np.dot(left_weights,  left_lines) / \
-        np.sum(left_weights) if len(left_weights) > 0 else None
-    right_lane = np.dot(right_weights, right_lines) / \
-        np.sum(right_weights) if len(right_weights) > 0 else None
-    return left_lane, right_lane
+                right_lines.append(slope)
+    return left_lines,right_lines #(왼쪽 선의 기울기와 오른쪽 선의 기울기 도출 : (2,2),(-2,-2))
 
 
-def get_line_gradient():
-    switch = 0
-    theta2 = 0
-    get_line_info()
-    for _ in range(0, 1):  # todo
-        if a == XMAX:
-            theta2 = theta
-            if switch == 0:
-                theta1 = theta
-                switch = 1
-    return (theta1+theta2)/2
+def get_line_gradient(left_lines,right_lines):
+    left_gradient=(left_lines[0]+left_lines[1])/2
+    right_gradient=(right_lines[0]+right_lines[1])/2
+    return (left_gradient+right_gradient)/2
 
 
 def get_direction(theta1: float, theta2: float):
