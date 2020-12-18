@@ -40,7 +40,7 @@ def show_canny(image_path: str):
     cv2.destroyAllWindows()
 
 
-def region_selection(image_path:str):
+def region_selection(image_path: str):
     """
     변환 지역 설정
     """
@@ -58,33 +58,34 @@ def region_selection(image_path:str):
     top_left = [cols * 0.4, rows * 0.6]
     bottom_right = [cols * 0.9, rows * 0.95]
     top_right = [cols * 0.6, rows * 0.6]
-    vertices = np.array([[bottom_left, top_left, top_right, bottom_right]], dtype=np.int32)
+    vertices = np.array(
+        [[bottom_left, top_left, top_right, bottom_right]], dtype=np.int32)
     cv2.fillPoly(mask, vertices, ignore_mask_color)
     masked_image = cv2.bitwise_and(image, mask)
     return masked_image
 
 
-def get_line(image_path:str):  
+def get_line(image_path: str):
     image = cv2.imread(image_path)
-    lines_down = [] # (x1, y1)
-    lines_up = [] # (x2, y2)
-    lines = [] # (x1,y1,x2,y2)
+    lines_down = []  # (x1, y1)
+    lines_up = []  # (x2, y2)
+    lines = []  # (x1,y1,x2,y2)
     rows, cols = image.shape[:2]
-    for k in range(2) :
-        for i in range(cols) : 
-            if k==0 :
-                if image[0,i] == (255,255,255) : 
-                    lines_down.append(list(0,i))
-            else :
-                if image[5,i] == (255,255,255) : 
-                    lines_up.append(list(0,i))
-    for i in len(lines_down) : 
+    for k in range(2):
+        for i in range(cols):
+            if k == 0:
+                if image[0, i] == (255, 255, 255):
+                    lines_down.append(list(0, i))
+            else:
+                if image[5, i] == (255, 255, 255):
+                    lines_up.append(list(0, i))
+    for i in len(lines_down):
         lines.append(lines_down[i]+lines_up[i])
-    return lines # x좌표와 y좌표로 정의된 선분들의 리스트 
+    return lines  # x좌표와 y좌표로 정의된 선분들의 리스트
 
 
 def average_slope(lines):
- 
+
     left_lines = []  # (slope)
     right_lines = []  # (slope)
 
@@ -93,17 +94,18 @@ def average_slope(lines):
             if x1 == x2:
                 continue
             slope = (y2 - y1) / (x2 - x1)
-            if slope > 0: #기울기가 양수면 왼쪽에 위치한 선이다
+            if slope > 0:  # 기울기가 양수면 왼쪽에 위치한 선이다
                 left_lines.append(slope)
             else:
                 right_lines.append(slope)
-    return left_lines,right_lines #(왼쪽 선의 기울기와 오른쪽 선의 기울기 도출 : (2,2),(-2,-2))
+    # (왼쪽 선의 기울기와 오른쪽 선의 기울기 도출 : (2,2),(-2,-2))
+    return left_lines, right_lines
 
 
-def get_line_gradient(left_lines,right_lines):
-    left_gradient=(left_lines[0]+left_lines[1])/2
-    right_gradient=(right_lines[0]+right_lines[1])/2
-    return (left_gradient+right_gradient)/2
+def get_line_gradient(left_lines, right_lines):
+    left_gradient = (left_lines[0]+left_lines[1])/2
+    right_gradient = (right_lines[0]+right_lines[1])/2
+    return left_gradient,right_gradient
 
 
 def get_direction(theta1: float, theta2: float):
